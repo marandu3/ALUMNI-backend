@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException
 from database.config import user_collection
 from models.user import Usercreate, UserInResponse
 from utils.idincrement import increment_user_id
+from utils.hashing import hash_password, verify_password
 
 router = APIRouter()
 
@@ -30,6 +31,7 @@ async def create_user(user: Usercreate):
     new_user_id = increment_user_id()
     user_dict = user.model_dump()
     user_dict["id"] = new_user_id  # Assign the new ID to the user
+    user_dict["hashed_password"] = hash_password(user.hashed_password)  # Hash the password before storing
     user_collection.insert_one(user_dict)
     return UserInResponse(**user_dict)  # Return the user with the new ID
 
@@ -56,3 +58,4 @@ async def get_user(user_id: int):
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return UserInResponse(**user)
+

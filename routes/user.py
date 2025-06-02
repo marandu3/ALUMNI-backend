@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException
 from database.config import user_collection
 from models.user import Usercreate, UserInResponse
 from utils.idincrement import increment_user_id
+from pymongo.collection import ReturnDocument
 from utils.hashing import hash_password, verify_password
 
 router = APIRouter()
@@ -59,3 +60,41 @@ async def get_user(user_id: int):
         raise HTTPException(status_code=404, detail="User not found")
     return UserInResponse(**user)
 
+@router.put("/users/{user_id}", response_model=UserInResponse)
+async def update_user(user_id: int, user: Usercreate):
+    updated_user = user_collection.find_one_and_update(
+        {"id": user_id},
+        {"$set": user.model_dump()},
+        return_document=ReturnDocument.AFTER  # returns the updated document
+    )
+
+    if not updated_user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    return UserInResponse(**updated_user)
+
+#route to change password
+@router.put("/users/{user_id}/change-password", response_model=UserInResponse)
+async def change_password(user_id: int, new_password: str):
+    user = user_collection.find_one({"id": user_id}, {"_id": 0})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    hashed_password = hash_password(new_password)
+    updated_user = user_collection.find_one_and_update(
+        {"id": user_id},
+        {"$set": {"hashed_password": hashed_password}},
+        return_document=ReturnDocument.AFTER
+    )
+    
+    return UserInResponse(**updated_user)
+
+@router.delete("/users/{user_id}", response_model=UserInResponse)
+async def delete_user(user_id: int):
+    delete_user = user_collection.find_one_and_delete(
+        {"id": user_id}, 
+        {"_id": 0}
+        )
+    if not delete_user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return UserInResponse(**delete_user)

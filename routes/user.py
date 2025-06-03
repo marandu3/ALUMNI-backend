@@ -17,7 +17,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme))-> TokenData:
     payload = decode_access_token(token)
     if payload is None:
         raise HTTPException(status_code=401, detail="Invalid authentication credentials")
-    return TokenData(username = payload.get("sub"), user_id=payload.get("user_id"))
+    return TokenData(username=payload.get("sub"), role=payload.get("role", "user"))
 
 
 @router.post("/token", response_model=Token)
@@ -31,7 +31,10 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
         )
 
     access_token = create_access_token(
-        data={"sub": user["username"], "role": user.get("role", "user")}
+        data={
+            "sub": user["username"],
+            "role": user.get("role", "user")
+        }
     )
     return {"access_token": access_token, "token_type": "bearer"}
 
@@ -44,7 +47,7 @@ async def role_required(required_role: str):
     return role_checker
 
 @router.get("/users", response_model=list[UserInResponse])
-async def get_users():
+async def get_users( current_user: TokenData = Depends(get_current_user)):
     users = user_collection.find({}, {"_id": 0})  # Correct projection to exclude MongoDB's _id
     user_list = [UserInResponse(**user) for user in users]  # Using list comprehension for cleaner code
     if not user_list:
@@ -73,9 +76,12 @@ async def create_user(user: Usercreate):
     return UserInResponse(**user_dict)  # Return the user with the new ID
 
 @router.get("/users/{user_id}", response_model=UserInResponse)
-async def get_user(user_id: int):
-
-    ##if you want to fetch all users and then find one user here is the code
+async def get_user(user_id: int, current_user: TokenData = Depends(get_current_user)):
+    # You can fetch all users and then find the specific user, but it's not efficient
+    # Uncomment the following lines if you want to fetch all users first
+    # This is not recommended for performance reasons, especially with large datasets.
+    # However, if you want to do it this way, you can use the following code:
+    # #if you want to fetch all users and then find one user here is the code
     # users = user_collection.find({}, {"_id": 0})  # Correct projection to exclude MongoDB's _id
     # user_list = []
     # for user in users:
@@ -97,7 +103,7 @@ async def get_user(user_id: int):
     return UserInResponse(**user)
 
 @router.put("/users/{user_id}", response_model=UserInResponse)
-async def update_user(user_id: int, user: Userupdate):
+async def update_user(user_id: int, user: Userupdate, current_user: TokenData = Depends(get_current_user)):
     updated_user = user_collection.find_one_and_update(
         {"id": user_id},
         {"$set": user.model_dump()},
@@ -111,7 +117,7 @@ async def update_user(user_id: int, user: Userupdate):
 
 #route to change password
 @router.put("/users/{user_id}/change-password", response_model=UserInResponse)
-async def change_password(user_id: int, new_password: str):
+async def change_password(user_id: int, new_password: str , current_user: TokenData = Depends(get_current_user)):
     user = user_collection.find_one({"id": user_id}, {"_id": 0})
     if not user:
         raise HTTPException(status_code=404, detail="User not found")

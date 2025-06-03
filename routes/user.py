@@ -1,11 +1,47 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends, status
+from fastapi.security import OAuth2PasswordRequestForm
 from database.config import user_collection
-from models.user import Usercreate, UserInResponse
+from models.user import Usercreate, UserInResponse, UserLogin, Userupdate
 from utils.idincrement import increment_user_id
 from pymongo.collection import ReturnDocument
 from utils.hashing import hash_password, verify_password
+from fastapi.security import OAuth2PasswordBearer
+from core.auth import create_access_token, decode_access_token
+from models.token import Token, TokenData 
 
 router = APIRouter()
+# OAuth2 scheme for token-based authentication
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
+async def get_current_user(token: str = Depends(oauth2_scheme))-> TokenData:
+    payload = decode_access_token(token)
+    if payload is None:
+        raise HTTPException(status_code=401, detail="Invalid authentication credentials")
+    return TokenData(username = payload.get("sub"), user_id=payload.get("user_id"))
+
+
+@router.post("/token", response_model=Token)
+async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
+    user = user_collection.find_one({"username": form_data.username})
+    if not user or not verify_password(form_data.password, user["hashed_password"]):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    access_token = create_access_token(
+        data={"sub": user["username"], "role": user.get("role", "user")}
+    )
+    return {"access_token": access_token, "token_type": "bearer"}
+
+
+async def role_required(required_role: str):
+    def role_checker(current_user: TokenData = Depends(get_current_user)):
+        if current_user.role != required_role:
+            raise HTTPException(status_code=403, detail="Operation not permitted")
+        return current_user
+    return role_checker
 
 @router.get("/users", response_model=list[UserInResponse])
 async def get_users():
@@ -61,7 +97,7 @@ async def get_user(user_id: int):
     return UserInResponse(**user)
 
 @router.put("/users/{user_id}", response_model=UserInResponse)
-async def update_user(user_id: int, user: Usercreate):
+async def update_user(user_id: int, user: Userupdate):
     updated_user = user_collection.find_one_and_update(
         {"id": user_id},
         {"$set": user.model_dump()},
@@ -90,7 +126,7 @@ async def change_password(user_id: int, new_password: str):
     return UserInResponse(**updated_user)
 
 @router.delete("/users/{user_id}", response_model=UserInResponse)
-async def delete_user(user_id: int):
+async def delete_user(user_id: int, current_user: TokenData = Depends(get_current_user)):
     delete_user = user_collection.find_one_and_delete(
         {"id": user_id}, 
         {"_id": 0}

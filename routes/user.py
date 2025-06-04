@@ -140,3 +140,4 @@ async def delete_user(user_id: int, current_user: TokenData = Depends(get_curren
     if not delete_user:
         raise HTTPException(status_code=404, detail="User not found")
     return UserInResponse(**delete_user)
+

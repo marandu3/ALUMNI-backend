@@ -1,5 +1,8 @@
 from jose import jwt, JWTError
 from datetime import datetime, timedelta, timezone
+from fastapi.security import OAuth2PasswordBearer
+from fastapi import Depends, HTTPException
+from models.token import TokenData
 
 SECRET_KEY = 'your_secret_key_here'
 ALGORITHM = 'HS256'
@@ -18,3 +21,19 @@ def decode_access_token(token: str):
         return payload
     except JWTError:
         return None
+    
+#OAuth2 scheme for token-based authentication
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
+async def get_current_user(token: str = Depends(oauth2_scheme))-> TokenData:
+    payload = decode_access_token(token)
+    if payload is None:
+        raise HTTPException(status_code=401, detail="Invalid authentication credentials")
+    return TokenData(username=payload.get("sub"), role=payload.get("role", "user"))
+
+async def role_required(required_role: str):
+    def role_checker(current_user: TokenData = Depends(get_current_user)):
+        if current_user.role != required_role:
+            raise HTTPException(status_code=403, detail="Operation not permitted")
+        return current_user
+    return role_checker

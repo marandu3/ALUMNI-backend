@@ -5,20 +5,19 @@ from models.user import Usercreate, UserInResponse, UserLogin, Userupdate
 from utils.idincrement import increment_user_id
 from pymongo.collection import ReturnDocument
 from utils.hashing import hash_password, verify_password
-# from fastapi.security import OAuth2PasswordBearer
+from fastapi.security import OAuth2PasswordBearer
 from core.auth import create_access_token, decode_access_token
-from models.token import Token, TokenData
-from core.auth import get_current_user, role_required
+from models.token import Token, TokenData 
 
 router = APIRouter()
-# # OAuth2 scheme for token-based authentication
-# oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+# OAuth2 scheme for token-based authentication
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
-# async def get_current_user(token: str = Depends(oauth2_scheme))-> TokenData:
-#     payload = decode_access_token(token)
-#     if payload is None:
-#         raise HTTPException(status_code=401, detail="Invalid authentication credentials")
-#     return TokenData(username=payload.get("sub"), role=payload.get("role", "user"))
+async def get_current_user(token: str = Depends(oauth2_scheme))-> TokenData:
+    payload = decode_access_token(token)
+    if payload is None:
+        raise HTTPException(status_code=401, detail="Invalid authentication credentials")
+    return TokenData(username=payload.get("sub"), role=payload.get("role", "user"))
 
 
 @router.post("/token", response_model=Token)
@@ -39,6 +38,13 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
     )
     return {"access_token": access_token, "token_type": "bearer"}
 
+
+async def role_required(required_role: str):
+    def role_checker(current_user: TokenData = Depends(get_current_user)):
+        if current_user.role != required_role:
+            raise HTTPException(status_code=403, detail="Operation not permitted")
+        return current_user
+    return role_checker
 
 @router.get("/users", response_model=list[UserInResponse])
 async def get_users( current_user: TokenData = Depends(get_current_user)):
@@ -134,4 +140,3 @@ async def delete_user(user_id: int, current_user: TokenData = Depends(get_curren
     if not delete_user:
         raise HTTPException(status_code=404, detail="User not found")
     return UserInResponse(**delete_user)
-

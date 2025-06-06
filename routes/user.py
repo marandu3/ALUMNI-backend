@@ -61,7 +61,7 @@ async def get_users( current_user: TokenData = Depends(get_current_user)):
     #     raise HTTPException(status_code=404, detail="No users found")
     # return user_list
 
-@router.post("/users", response_model = UserInResponse)
+@router.post("/user", response_model = UserInResponse)
 async def create_user(user: Usercreate):
     existing_user = user_collection.find_one({"username": user.username})
     if existing_user:

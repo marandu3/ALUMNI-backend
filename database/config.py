@@ -16,7 +16,7 @@ client = MongoClient(uri, server_api=ServerApi('1'))
 #creating a database
 db = client['ALUMNI']
 
-#creating a collection
+#creating a collection\\\\]
 user_collection = db['alumni']
 news_collection = db['news']
 payment_collection = db['payment']

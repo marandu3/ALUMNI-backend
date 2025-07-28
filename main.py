@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from routes.user import router as user_router
 from routes.news import router as news_router
+import os
 
 app = FastAPI()
 
@@ -22,3 +23,13 @@ app.include_router(news_router, tags=["news"])
 @app.get("/")
 async def main():
     return {"message": "Hello World"}
+
+if __name__ == "__main__":
+    import uvicorn
+    port = int(os.environ.get("PORT", 8000))  # Render provides PORT env var
+    uvicorn.run(
+        "main:app",
+        host="0.0.0.0",  # Critical for Render to detect the service
+        port=port,
+        reload=True if os.environ.get("DEV") == "True" else False
+    )

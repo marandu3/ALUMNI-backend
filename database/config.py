@@ -19,7 +19,6 @@ db = client['ALUMNI']
 #creating a collection\\\\]
 user_collection = db['alumni']
 news_collection = db['news']
-payment_collection = db['payment']
 
 # Send a ping to confirm a successful connection
 try:

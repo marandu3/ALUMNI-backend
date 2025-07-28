@@ -2,9 +2,14 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from routes.user import router as user_router
 from routes.news import router as news_router
+from routes.events import router as events_router
 import os
 
-app = FastAPI()
+app = FastAPI(
+    title="Alumni Network API",
+    description="A comprehensive API for alumni network management",
+    version="1.0.0"
+)
 
 # ✅ Allow requests from any origin (cross-platform: web, mobile, etc.)
 app.add_middleware(
@@ -16,13 +21,23 @@ app.add_middleware(
 )
 
 # ✅ Include your route groups
-app.include_router(user_router, tags=["user"])
-app.include_router(news_router, tags=["news"])
+app.include_router(user_router, prefix="/api/v1", tags=["user"])
+app.include_router(news_router, prefix="/api/v1", tags=["news"])
+app.include_router(events_router, prefix="/api/v1", tags=["events"])
 
 # ✅ Test endpoint
 @app.get("/")
 async def main():
-    return {"message": "Hello World"}
+    return {
+        "message": "Welcome to Alumni Network API",
+        "version": "1.0.0",
+        "docs": "/docs",
+        "redoc": "/redoc"
+    }
+
+@app.get("/health")
+async def health_check():
+    return {"status": "healthy", "timestamp": "2024-01-01T00:00:00Z"}
 
 if __name__ == "__main__":
     import uvicorn

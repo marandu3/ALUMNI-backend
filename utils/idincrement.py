@@ -1,5 +1,5 @@
-from database.config import user_collection, news_collection
-
+from database.config import user_collection, news_collection, events_collection
+import uuid
 
 #this function is used to increment the id of a user
 def increment_user_id():
@@ -12,12 +12,6 @@ def increment_user_id():
     
     # Increment the maximum id by 1
     return max_user["id"] + 1
-# This function can be used when creating a new user to ensure unique IDs
-# Example usage:
-# new_user_id = increment_user_id()
-# print(new_user_id)  # This will print the next available user ID
-# Note: Ensure that the user_collection is properly defined and connected to your MongoDB instance.
-# Ensure that the user_collection is properly defined and connected to your MongoDB instance.
 
 #increment_news_id function
 def increment_news_id():
@@ -30,3 +24,11 @@ def increment_news_id():
     
     # Increment the maximum id by 1
     return max_news["id"] + 1
+
+#generate unique event id
+def generate_event_id():
+    return str(uuid.uuid4())
+
+#generate unique news id
+def generate_news_id():
+    return str(uuid.uuid4())

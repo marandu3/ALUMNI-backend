@@ -16,9 +16,10 @@ client = MongoClient(uri, server_api=ServerApi('1'))
 #creating a database
 db = client['ALUMNI']
 
-#creating a collection\\\\]
+#creating collections
 user_collection = db['alumni']
 news_collection = db['news']
+events_collection = db['events']
 
 # Send a ping to confirm a successful connection
 try:

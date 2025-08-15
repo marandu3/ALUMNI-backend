@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from routes.user import router as user_router
 from routes.news import router as news_router
+import uvicorn
 
 app = FastAPI()
 
@@ -22,3 +23,7 @@ app.include_router(news_router, tags=["news"])
 @app.get("/")
 async def main():
     return {"message": "Hello World"}
+
+# ✅ Run the application using: uvicorn main:app --reload
+if __name__ == "__main__":
+    uvicorn.run("main:app", host="0.0.0.0", port=8080, reload=True)

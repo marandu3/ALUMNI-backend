@@ -1,19 +1,17 @@
 from pydantic import BaseModel, EmailStr
 from enum import Enum
 
-# Enum to restrict roles to 'admin' or 'user'
 class UserRole(str, Enum):
     admin = "admin"
     user = "user"
 
-# This model is used as input and to see some of the user details
 class Usercreate(BaseModel):
     username: str
     email: EmailStr
     full_name: str | None = None
     graduatedyear: int | None = None
     phone: str | None = None
-    role: UserRole = UserRole.user  # default is 'user', type is enum
+    role: UserRole = UserRole.user
     hashed_password: str
     is_active: bool = True
 
@@ -23,14 +21,12 @@ class Userupdate(BaseModel):
     full_name: str | None = None
     graduatedyear: int | None = None
     phone: str | None = None
-    role: UserRole = UserRole.user  # restrict to only valid roles
+    role: UserRole = UserRole.user
     is_active: bool = True
 
-# This model is used as data stored in the db and it extends Usercreate
 class UserInDB(Usercreate):
     id: int
 
-# This model is used to return the user details in the response
 class UserInResponse(BaseModel):
     id: int
     username: str
@@ -38,7 +34,7 @@ class UserInResponse(BaseModel):
     full_name: str | None = None
     graduatedyear: int | None = None
     phone: str | None = None
-    role: UserRole | None = None  # optional in the response
+    role: UserRole | None = None
     is_active: bool = True
     is_superuser: bool = False
 

@@ -6,24 +6,24 @@ import uvicorn
 
 app = FastAPI()
 
-# ✅ Allow requests from any origin (cross-platform: web, mobile, etc.)
+# Allow requests from any origin
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Accept requests from any domain
+    allow_origins=["*"],  
     allow_credentials=True,
-    allow_methods=["*"],  # Allow all HTTP methods (GET, POST, PUT, DELETE, etc.)
-    allow_headers=["*"],  # Allow all headers (e.g., Authorization, Content-Type)
+    allow_methods=["*"],  
+    allow_headers=["*"],  
 )
 
-# ✅ Include your route groups
+# Include routers
 app.include_router(user_router, tags=["user"])
 app.include_router(news_router, tags=["news"])
 
-# ✅ Test endpoint
+# Test endpoint
 @app.get("/")
 async def main():
     return {"message": "Hello World"}
 
-# ✅ Run the application using: uvicorn main:app --reload
+# Run application
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8080, reload=True)
